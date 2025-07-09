@@ -1,0 +1,78 @@
+
+services:
+  # Zookeeper for Kafka (Kafka's dependency)
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes # For local development
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper # Persistent data for Zookeeper
+
+  # Kafka Broker
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:9092' # External port:Internal port
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka_data:/bitnami/kafka/data
+
+  # MongoDB Database
+  mongodb:
+    image: 'mongo:latest'
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb_data:/data/db
+
+  # API Gateway
+  api-gateway:
+    build: ./services/java/api-gateway
+    ports:
+      - '8080:8080'
+    environment: {}
+    depends_on:
+      - kafka
+      - mongodb
+    # For now, it doesn't need to depend on specific microservices as it uses httpbin.org
+
+  # RBAC Microservice
+  rbac-service:
+    build: ./services/java/rbac
+    ports:
+      - '8081:8081'
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/rbac_db
+      - SPRING_APPLICATION_NAME=rbac-service
+    depends_on:
+      - mongodb
+      # - server-discovery
+    restart: unless-stopped
+
+  # Message Logic Microservice
+  message-logic-service:
+    build: ./services/java/message-logic-service
+    ports:
+      - '8082:8082'
+    environment:
+      - SPRING_APPLICATION_NAME=message-logic-service
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+volumes:
+  zookeeper_data:
+  kafka_data:
+  mongodb_data:
