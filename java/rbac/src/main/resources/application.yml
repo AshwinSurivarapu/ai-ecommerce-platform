@@ -1,0 +1,18 @@
+# services/java/rbac-service/src/main/resources/application.yml
+server:
+  port: 8081 # Port for RBAC service (will be internal in Docker network)
+
+spring:
+  application:
+    name: rbac-service
+  data:
+    mongodb:
+      uri: mongodb://mongodb:27017/rbac_db # Connect to our Dockerized MongoDB
+  # Eureka Client (for service discovery later)
+  eureka:
+    client:
+      enabled: false # Temporarily disable Eureka client for Day 2
+      # service-url:
+      #   defaultZone: http://server-discovery:8761/eureka/
+    instance:
+      hostname: rbac-service # Docker internal hostname
