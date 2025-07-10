@@ -1,0 +1,59 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Customer")
+
+System_Boundary(ecommerce_system, "AI Powered E-commerce Platform") {
+
+    Container(react_mf_login, "Login Microfrontend", "React, TypeScript, Material UI", "User Authentication UI")
+    Container(react_mf_chat, "Chat Microfrontend", "React, TypeScript, Material UI", "AI Chat Interface")
+    Container(react_mf_main, "Main Function Microfrontend", "React, TypeScript, Material UI", "Product Browse, Cart, Checkout")
+
+    Container(api_gateway, "API Gateway", "Spring Cloud Gateway, Resilience4j", "Routing, Authentication, Resilience")
+
+    Container(java_rbac_ms, "RBAC Microservice", "Java 17, Spring Boot", "User Management, Authentication, Authorization")
+    ContainerDb(mongodb_rbac, "MongoDB", "NoSQL Database", "User Accounts, Roles")
+
+    Container(java_msg_ms, "Message Logic Microservice", "Java 17, Spring Boot", "Internal Notifications, Event Processing")
+    ContainerDb(h2_msg, "H2/PostgreSQL", "Relational Database", "Transient Messages, System Events")
+
+    Container(python_ai_chat_ms, "AI Chat Microservice", "Python, Flask, Hugging Face", "Conversational AI Logic")
+    ContainerDb(mongodb_chat, "MongoDB", "NoSQL Database", "Chat History, AI Model Config")
+
+    Container(python_ai_recommends_ms, "AI Recommends Microservice", "Python, Flask", "Product Recommendations, FAQs, Recent Searches")
+    ContainerDb(sqlite_faqs, "SQLite/PostgreSQL", "Relational Database", "FAQs, Search Log, Recommendation Data")
+
+    Container(kafka_broker, "Kafka Cluster", "Apache Kafka", "Asynchronous Event Bus")
+    Container(server_discovery, "Server Discovery", "Netflix Eureka (e.g.)", "Service Registration and Discovery")
+}
+
+Rel(user, react_mf_login, "Accesses", "HTTPS")
+Rel(user, react_mf_chat, "Interacts with", "HTTPS")
+Rel(user, react_mf_main, "Browses/Purchases", "HTTPS")
+
+Rel(react_mf_login, api_gateway, "Authenticates via", "GraphQL/HTTPS")
+Rel(react_mf_chat, api_gateway, "Sends chat messages to", "GraphQL/HTTPS")
+Rel(react_mf_main, api_gateway, "Fetches data from", "GraphQL/HTTPS")
+
+Rel(api_gateway, java_rbac_ms, "Routes auth requests to", "REST/HTTPS")
+Rel(api_gateway, python_ai_chat_ms, "Routes chat requests to", "REST/HTTPS")
+Rel(api_gateway, python_ai_recommends_ms, "Routes AI/FAQ requests to", "REST/HTTPS")
+Rel(api_gateway, java_msg_ms, "Routes notifications to", "REST/HTTPS")
+
+Rel(java_rbac_ms, mongodb_rbac, "Reads/Writes User Data", "MongoDB Driver")
+Rel(java_msg_ms, h2_msg, "Reads/Writes Internal Messages", "JDBC")
+Rel(python_ai_chat_ms, mongodb_chat, "Reads/Writes Chat History", "PyMongo")
+Rel(python_ai_recommends_ms, sqlite_faqs, "Reads/Writes FAQ/Search Data", "SQLite Driver")
+
+Rel(java_rbac_ms, kafka_broker, "Produces 'UserLoggedIn' Event", "Kafka Protocol")
+Rel(java_msg_ms, kafka_broker, "Consumes Product/Chat Events", "Kafka Protocol")
+Rel(python_ai_chat_ms, kafka_broker, "Produces 'ChatMessage' Event", "Kafka Protocol")
+Rel(python_ai_recommends_ms, kafka_broker, "Consumes 'ProductViewed' Event", "Kafka Protocol")
+
+Rel_R(server_discovery, java_rbac_ms, "Registers/Discovers")
+Rel_R(server_discovery, java_msg_ms, "Registers/Discovers")
+Rel_R(server_discovery, python_ai_chat_ms, "Registers/Discovers")
+Rel_R(server_discovery, python_ai_recommends_ms, "Registers/Discovers")
+Rel_R(api_gateway, server_discovery, "Discovers Services")
+
+@enduml
