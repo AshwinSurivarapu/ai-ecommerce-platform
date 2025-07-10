@@ -1,4 +1,0 @@
-# services/python/ai-chat-service/requirements.txt
-Flask==2.3.2 # Or a recent stable version
-pymongo==4.6.1 # For MongoDB interaction
-transformers==4.38.2 # For Hugging Face models
