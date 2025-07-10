@@ -1,0 +1,28 @@
+# services/java/api-gateway/src/main/resources/application.yml
+server:
+  port: 8080 # Default API Gateway port
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: hello_route # A simple dummy route for testing
+          uri: https://httpbin.org/get # Routes to a public test endpoint
+          predicates:
+            - Path=/hello/** # Matches requests like /hello/something
+          filters:
+            - RewritePath=/hello/(?<segment>.*), /${segment} # Rewrites /hello/test to /test
+    # Eureka Client (for service discovery later)
+    # This will try to connect to a Eureka server, which we haven't set up yet.
+    # We'll enable it later when we have a discovery server.
+    # Until then, it might log connection errors, which is okay for now.
+    # You can comment out eureka sections if it's too noisy for now.
+  eureka:
+    client:
+      enabled: false # Temporarily disable Eureka client for Day 2 to avoid errors
+      # service-url:
+      #   defaultZone: http://server-discovery:8761/eureka/ # Point to our discovery service
+    instance:
+      hostname: api-gateway
